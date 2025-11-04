@@ -2,7 +2,7 @@ name: Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]   # 다른 브랜치에서 동작시키고 싶다면 변경 (예: "master")
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -15,29 +15,34 @@ jobs:
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }} 
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }} 
-        aws-region: ap-northeast-2   
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ap-northeast-2
 
     - name: Login to Amazon ECR Public
+      shell: bash
       run: |
-        aws ecr-public get-login-password --region us-east-1 | \     
-        docker login --username AWS --password-stdin public.ecr.aws/l2x7d9z6/ecs-demo-repo
+        set -euo pipefail
+        aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/l2x7d9z6/ecs-demo-repo
 
     - name: Build Docker image
+      shell: bash
       run: |
+        set -euo pipefail
         docker build -t ecs-demo-repo:latest .
         docker tag ecs-demo-repo:latest public.ecr.aws/l2x7d9z6/ecs-demo-repo:latest
 
     - name: Push Docker image to ECR
+      shell: bash
       run: |
+        set -euo pipefail
         docker push public.ecr.aws/l2x7d9z6/ecs-demo-repo:latest
 
     - name: Deploy to ECS (Fargate)
+      shell: bash
       run: |
+        set -euo pipefail
         aws ecs update-service \
-          --cluster ecs-demo-cluster \     # 본인 ECS 클러스터 이름으로 변경
-          --service ecs-demo-service \     # 본인 ECS 서비스 이름으로 변경
+          --cluster ecs-demo-cluster \
+          --service ecs-demo-service \
           --force-new-deployment \
-          --region ap-northeast-2
-
